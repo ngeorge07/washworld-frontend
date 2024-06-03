@@ -14,9 +14,17 @@ import {
   InputField,
   ScrollView,
   View,
+  Toast,
+  ToastDescription,
+  ToastTitle,
+  VStack,
+  useToast,
 } from "@gluestack-ui/themed";
 import { Formik } from "formik";
 import React, { FC } from "react";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../app/store";
+import { signUp } from "./authSlice";
 
 type FormData = {
   fullName: string;
@@ -26,6 +34,8 @@ type FormData = {
 };
 
 export const SignupScreen: FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
   const initialValues: FormData = {
     fullName: "",
     email: "",
@@ -65,13 +75,56 @@ export const SignupScreen: FC = () => {
 
     return errors;
   };
+  const toast = useToast();
 
   return (
     <ScrollView>
       <Formik
         initialValues={initialValues}
         validate={validate}
-        onSubmit={(values) => console.log(values)}
+        onSubmit={(values: FormData) => {
+          dispatch(
+            signUp({
+              fullName: values.fullName,
+              password: values.password,
+              email: values.email,
+            })
+          )
+            .then(() => {
+              toast.show({
+                placement: "bottom",
+                render: ({ id }) => {
+                  const toastId = "toast-" + id;
+                  return (
+                    <Toast nativeID={toastId} action="success" variant="solid">
+                      <VStack space="xs">
+                        <ToastTitle>Account created</ToastTitle>
+                        <ToastDescription>Congratulations!</ToastDescription>
+                      </VStack>
+                    </Toast>
+                  );
+                },
+              });
+            })
+            .catch((error) => {
+              toast.show({
+                placement: "bottom",
+                render: ({ id }) => {
+                  const toastId = "toast-" + id;
+                  return (
+                    <Toast nativeID={toastId} action="error" variant="solid">
+                      <VStack space="xs">
+                        <ToastTitle>Sign up error</ToastTitle>
+                        <ToastDescription>
+                          {error.response.data.message}
+                        </ToastDescription>
+                      </VStack>
+                    </Toast>
+                  );
+                },
+              });
+            });
+        }}
         validateOnBlur={false}
         validateOnChange={false}
       >

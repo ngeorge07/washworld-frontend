@@ -57,10 +57,7 @@ export const signUp =
     // set the status to loading
     dispatch(authSlice.actions.request());
     try {
-      const response = await axios.post<SignupResponse>(
-        "/auth/signup",
-        payload
-      );
+      const response = await axios.post<SignupResponse>("/users", payload);
       const user = response.data.id;
       if (user) {
         dispatch(authSlice.actions.signupSuccess());
@@ -70,8 +67,8 @@ export const signUp =
         throw new Error("Invalid response from server while creating user");
       }
     } catch (error) {
-      console.log(error);
       dispatch(authSlice.actions.failure());
+      throw error;
     } finally {
       dispatch(authSlice.actions.initial());
     }
