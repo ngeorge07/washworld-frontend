@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import * as SecureStore from "expo-secure-store";
 import axios from "../../app/axios";
 import { AppDispatch } from "../../app/store";
@@ -6,7 +6,7 @@ import { User } from "../../types/User";
 
 export interface AuthState {
   isSignedIn: boolean;
-  user: User | null;
+  user: User | ReceivedUser | null;
   status: "initial" | "loading" | "success" | "failure";
 }
 
@@ -36,8 +36,21 @@ type SignInPayloadType = {
   password: string;
 };
 
+type ReceivedUser = {
+  sub: number;
+  fullName: string;
+  email: string;
+  roles: string[];
+  iat: number;
+  exp: number;
+};
+
 export type AuthResponse = {
   access_token: string;
+};
+
+export type ValidateResponse = {
+  user: ReceivedUser;
 };
 
 export const authSlice = createSlice({
@@ -64,8 +77,20 @@ export const authSlice = createSlice({
       state.isSignedIn = false;
       state.status = "failure";
     },
+
+    setUser: (state: AuthState, action: PayloadAction<ReceivedUser>) => {
+      state.user = action.payload;
+    },
   },
 });
+
+async function getToken() {
+  return await SecureStore.getItemAsync("token");
+}
+
+async function saveToken(token: string) {
+  await SecureStore.setItemAsync("token", token);
+}
 
 export const signIn =
   (payload: SignInPayloadType) => async (dispatch: AppDispatch) => {
@@ -76,8 +101,7 @@ export const signIn =
       const token = response.data.access_token;
 
       if (token) {
-        console.log(token);
-        await SecureStore.setItemAsync("token", token);
+        await saveToken(token);
         dispatch(authSlice.actions.signinSuccess());
       }
     } catch (error) {
@@ -109,6 +133,30 @@ export const signUp =
       dispatch(authSlice.actions.initial());
     }
   };
+
+export const autoSignIn = () => async (dispatch: AppDispatch) => {
+  dispatch(authSlice.actions.request());
+  try {
+    const storedToken = await getToken();
+    if (storedToken) {
+      const headers = { Authorization: `Bearer ${storedToken}` };
+      const res = await axios.get<ValidateResponse>("/auth/validate", {
+        headers,
+      });
+      const { user } = res.data;
+      await saveToken(storedToken);
+      dispatch(authSlice.actions.signinSuccess());
+      dispatch(authSlice.actions.setUser(user));
+    } else {
+      throw new Error("No token found");
+    }
+  } catch (error) {
+    console.log(error);
+    dispatch(authSlice.actions.failure());
+  } finally {
+    dispatch(authSlice.actions.initial());
+  }
+};
 
 export const { initial, request, failure, signupSuccess, signinSuccess } =
   authSlice.actions;
