@@ -14,17 +14,15 @@ import {
   Input,
   InputField,
   ScrollView,
-  Toast,
-  ToastDescription,
-  ToastTitle,
-  VStack,
   View,
   useToast,
 } from "@gluestack-ui/themed";
 import { Formik } from "formik";
-import React, { FC, useState } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../app/store";
+import React, { FC } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../app/store";
+import { colors } from "../../styles";
+import { CustomToast } from "../components/CustomToast";
 import { signUp } from "./authSlice";
 
 type FormData = {
@@ -36,7 +34,8 @@ type FormData = {
 
 export const SignupScreen: FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const [isLoading, setIsLoading] = useState(false);
+  const status = useSelector((state: RootState) => state.auth.status);
+  const toast = useToast();
 
   const initialValues: FormData = {
     fullName: "",
@@ -77,7 +76,6 @@ export const SignupScreen: FC = () => {
 
     return errors;
   };
-  const toast = useToast();
 
   return (
     <ScrollView>
@@ -85,7 +83,6 @@ export const SignupScreen: FC = () => {
         initialValues={initialValues}
         validate={validate}
         onSubmit={(values: FormData) => {
-          setIsLoading(true);
           dispatch(
             signUp({
               fullName: values.fullName,
@@ -99,12 +96,14 @@ export const SignupScreen: FC = () => {
                 render: ({ id }) => {
                   const toastId = "toast-" + id;
                   return (
-                    <Toast nativeID={toastId} action="success" variant="solid">
-                      <VStack space="xs">
-                        <ToastTitle>Account created</ToastTitle>
-                        <ToastDescription>Congratulations!</ToastDescription>
-                      </VStack>
-                    </Toast>
+                    <CustomToast
+                      toastId={toastId}
+                      title="Sign up error"
+                      message={
+                        "Congratulations! You have successfully signed up."
+                      }
+                      action="success"
+                    />
                   );
                 },
               });
@@ -115,27 +114,22 @@ export const SignupScreen: FC = () => {
                 render: ({ id }) => {
                   const toastId = "toast-" + id;
                   return (
-                    <Toast nativeID={toastId} action="error" variant="solid">
-                      <VStack space="sm">
-                        <ToastTitle>Sign up error</ToastTitle>
-                        <ToastDescription>
-                          {error.response.data.message}
-                        </ToastDescription>
-                      </VStack>
-                    </Toast>
+                    <CustomToast
+                      toastId={toastId}
+                      title="Sign up error"
+                      message={error.response.data.message}
+                      action="error"
+                    />
                   );
                 },
               });
-            })
-            .finally(() => {
-              setIsLoading(false);
             });
         }}
         validateOnBlur={false}
         validateOnChange={false}
       >
         {({ errors, handleChange, handleBlur, handleSubmit, values }) => (
-          <View>
+          <View display="flex" gap="$6" mt="$11" mx="$9">
             {/* Full Name Field */}
             <FormControl
               size="md"
@@ -187,6 +181,7 @@ export const SignupScreen: FC = () => {
                   }}
                   onBlur={handleBlur("email")}
                   value={values.email}
+                  autoCapitalize="none"
                 />
               </Input>
               <FormControlError>
@@ -216,6 +211,7 @@ export const SignupScreen: FC = () => {
                   }}
                   onBlur={handleBlur("password")}
                   value={values.password}
+                  autoCapitalize="none"
                 />
               </Input>
               <FormControlError>
@@ -254,6 +250,7 @@ export const SignupScreen: FC = () => {
                   }}
                   onBlur={handleBlur("confirmPassword")}
                   value={values.confirmPassword}
+                  autoCapitalize="none"
                 />
               </Input>
               <FormControlError>
@@ -263,9 +260,12 @@ export const SignupScreen: FC = () => {
                 </FormControlErrorText>
               </FormControlError>
             </FormControl>
-
-            <Button isDisabled={isLoading} onPress={() => handleSubmit()}>
-              {isLoading && <ButtonSpinner mr="$1" />}
+            <Button
+              bg={colors.primary.washWorldGreen}
+              isDisabled={status === "loading"}
+              onPress={() => handleSubmit()}
+            >
+              {status === "loading" && <ButtonSpinner mr="$1" />}
               <ButtonText>Submit</ButtonText>
             </Button>
           </View>

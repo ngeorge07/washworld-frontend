@@ -16,7 +16,11 @@ export default function AuthScreen() {
   return (
     <Stack.Navigator initialRouteName="signup">
       <Stack.Screen name="login" component={LoginScreen} />
-      <Stack.Screen name="signup" component={SignupScreen} />
+      <Stack.Screen
+        name="signup"
+        component={SignupScreen}
+        options={{ title: "Sign up to Wash World" }}
+      />
     </Stack.Navigator>
   );
 }
