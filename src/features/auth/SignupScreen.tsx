@@ -1,6 +1,7 @@
 import {
   AlertCircleIcon,
   Button,
+  ButtonSpinner,
   ButtonText,
   FormControl,
   FormControlError,
@@ -13,15 +14,15 @@ import {
   Input,
   InputField,
   ScrollView,
-  View,
   Toast,
   ToastDescription,
   ToastTitle,
   VStack,
+  View,
   useToast,
 } from "@gluestack-ui/themed";
 import { Formik } from "formik";
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../app/store";
 import { signUp } from "./authSlice";
@@ -35,6 +36,7 @@ type FormData = {
 
 export const SignupScreen: FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const [isLoading, setIsLoading] = useState(false);
 
   const initialValues: FormData = {
     fullName: "",
@@ -83,6 +85,7 @@ export const SignupScreen: FC = () => {
         initialValues={initialValues}
         validate={validate}
         onSubmit={(values: FormData) => {
+          setIsLoading(true);
           dispatch(
             signUp({
               fullName: values.fullName,
@@ -113,7 +116,7 @@ export const SignupScreen: FC = () => {
                   const toastId = "toast-" + id;
                   return (
                     <Toast nativeID={toastId} action="error" variant="solid">
-                      <VStack space="xs">
+                      <VStack space="sm">
                         <ToastTitle>Sign up error</ToastTitle>
                         <ToastDescription>
                           {error.response.data.message}
@@ -123,6 +126,9 @@ export const SignupScreen: FC = () => {
                   );
                 },
               });
+            })
+            .finally(() => {
+              setIsLoading(false);
             });
         }}
         validateOnBlur={false}
@@ -258,8 +264,8 @@ export const SignupScreen: FC = () => {
               </FormControlError>
             </FormControl>
 
-            {/* Submit Button */}
-            <Button onPress={() => handleSubmit()}>
+            <Button isDisabled={isLoading} onPress={() => handleSubmit()}>
+              {isLoading && <ButtonSpinner mr="$1" />}
               <ButtonText>Submit</ButtonText>
             </Button>
           </View>
