@@ -11,18 +11,24 @@ import {
   FormControlHelperText,
   FormControlLabel,
   FormControlLabelText,
+  HStack,
   Input,
   InputField,
+  Link,
+  LinkText,
   ScrollView,
-  View,
+  Text,
   useToast,
+  View,
 } from "@gluestack-ui/themed";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { Formik } from "formik";
 import React, { FC } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../app/store";
 import { colors } from "../../styles";
 import { CustomToast } from "../components/CustomToast";
+import { AuthParams } from "./AuthScreen";
 import { signUp } from "./authSlice";
 
 type FormData = {
@@ -35,6 +41,7 @@ type FormData = {
 export const SignupScreen: FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const status = useSelector((state: RootState) => state.auth.status);
+  const navigation = useNavigation<NavigationProp<AuthParams, "signup">>();
   const toast = useToast();
 
   const initialValues: FormData = {
@@ -77,12 +84,24 @@ export const SignupScreen: FC = () => {
     return errors;
   };
 
+  async function navigateToSignin(values: FormData): Promise<void> {
+    const user = {
+      fullName: values.fullName,
+      email: values.email,
+      password: values.password,
+    };
+    navigation.navigate("login", {
+      email: user.email,
+      password: user.password,
+    });
+  }
+
   return (
-    <ScrollView>
+    <ScrollView mt="$11" mx="$9">
       <Formik
         initialValues={initialValues}
         validate={validate}
-        onSubmit={(values: FormData) => {
+        onSubmit={(values: FormData, { resetForm }) => {
           dispatch(
             signUp({
               fullName: values.fullName,
@@ -91,22 +110,8 @@ export const SignupScreen: FC = () => {
             })
           )
             .then(() => {
-              toast.show({
-                placement: "bottom",
-                render: ({ id }) => {
-                  const toastId = "toast-" + id;
-                  return (
-                    <CustomToast
-                      toastId={toastId}
-                      title="Sign up error"
-                      message={
-                        "Congratulations! You have successfully signed up."
-                      }
-                      action="success"
-                    />
-                  );
-                },
-              });
+              navigateToSignin(values);
+              // resetForm();
             })
             .catch((error) => {
               toast.show({
@@ -129,7 +134,7 @@ export const SignupScreen: FC = () => {
         validateOnChange={false}
       >
         {({ errors, handleChange, handleBlur, handleSubmit, values }) => (
-          <View display="flex" gap="$6" mt="$11" mx="$9">
+          <View display="flex" gap="$6">
             {/* Full Name Field */}
             <FormControl
               size="md"
@@ -271,6 +276,13 @@ export const SignupScreen: FC = () => {
           </View>
         )}
       </Formik>
+
+      <HStack mt="$3">
+        <Text>Already have an account? </Text>
+        <Link onPress={() => navigation.navigate("login")}>
+          <LinkText>Log in</LinkText>
+        </Link>
+      </HStack>
     </ScrollView>
   );
 };

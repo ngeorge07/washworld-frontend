@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import * as SecureStore from "expo-secure-store";
 import axios from "../../app/axios";
 import { AppDispatch } from "../../app/store";
 import { User } from "../../types/User";
@@ -30,6 +31,15 @@ export type SignupResponse = {
   washCoins: number;
 };
 
+type SignInPayloadType = {
+  email: string;
+  password: string;
+};
+
+export type AuthResponse = {
+  access_token: string;
+};
+
 export const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -44,6 +54,11 @@ export const authSlice = createSlice({
       state.status = "success";
     },
 
+    signinSuccess: (state: AuthState) => {
+      state.isSignedIn = true;
+      state.status = "success";
+    },
+
     failure: (state: AuthState) => {
       state.user = null;
       state.isSignedIn = false;
@@ -51,6 +66,27 @@ export const authSlice = createSlice({
     },
   },
 });
+
+export const signIn =
+  (payload: SignInPayloadType) => async (dispatch: AppDispatch) => {
+    // set the status to loading
+    dispatch(authSlice.actions.request());
+    try {
+      const response = await axios.post<AuthResponse>("/auth/login", payload);
+      const token = response.data.access_token;
+
+      if (token) {
+        console.log(token);
+        await SecureStore.setItemAsync("token", token);
+        dispatch(authSlice.actions.signinSuccess());
+      }
+    } catch (error) {
+      dispatch(authSlice.actions.failure());
+      throw error;
+    } finally {
+      dispatch(authSlice.actions.initial());
+    }
+  };
 
 export const signUp =
   (payload: SignUpPayloadType) => async (dispatch: AppDispatch) => {
@@ -74,6 +110,7 @@ export const signUp =
     }
   };
 
-export const { initial, request, failure, signupSuccess } = authSlice.actions;
+export const { initial, request, failure, signupSuccess, signinSuccess } =
+  authSlice.actions;
 
 export default authSlice.reducer;
