@@ -189,8 +189,16 @@ export const signOut = () => async (dispatch: AppDispatch) => {
 
 export const fetchUser = (userSub: number) => async (dispatch: AppDispatch) => {
   try {
-    const response = await axios.get<ReceivedUser>(`/users/${userSub}`);
-    dispatch(authSlice.actions.setUser(response.data));
+    const storedToken = await getToken();
+
+    if (storedToken) {
+      const headers = { Authorization: `Bearer ${storedToken}` };
+
+      const response = await axios.get<ReceivedUser>(`/users/${userSub}`, {
+        headers,
+      });
+      dispatch(authSlice.actions.setUser(response.data));
+    }
   } catch (error) {
     console.error(error);
   }

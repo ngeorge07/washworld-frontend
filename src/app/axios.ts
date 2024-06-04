@@ -1,7 +1,7 @@
 // axios.ts
 import axios, { AxiosError } from "axios";
 
-console.log(process.env);
+console.log(process.env.IP);
 
 const instance = axios.create({
   baseURL: `http://${process.env.IP}:3000`, // Make sure this is correct
