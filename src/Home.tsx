@@ -1,3 +1,4 @@
+import { Spinner, View } from "@gluestack-ui/themed";
 import { NavigationContainer } from "@react-navigation/native";
 import { useLayoutEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,6 +14,14 @@ export default function Home() {
   useLayoutEffect(() => {
     dispatch(autoSignIn());
   }, []);
+
+  if (auth.status === "loading") {
+    return (
+      <View h="$full" display="flex" justifyContent="center">
+        <Spinner size="large" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
