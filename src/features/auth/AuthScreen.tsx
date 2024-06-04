@@ -16,7 +16,7 @@ const Stack = createNativeStackNavigator<AuthParams>();
 
 export default function AuthScreen() {
   return (
-    <Stack.Navigator initialRouteName="signup">
+    <Stack.Navigator initialRouteName="login">
       <Stack.Screen
         name="login"
         component={LoginScreen}
@@ -25,7 +25,7 @@ export default function AuthScreen() {
       <Stack.Screen
         name="signup"
         component={SignupScreen}
-        options={{ title: "Sign up to Wash World" }}
+        options={{ title: "Sign up to Wash World", headerBackVisible: false }}
       />
     </Stack.Navigator>
   );

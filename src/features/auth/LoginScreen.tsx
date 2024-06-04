@@ -99,7 +99,9 @@ export const LoginScreen: FC = () => {
         validate={validate}
         onSubmit={(values: FormData, { resetForm }) => {
           dispatch(signIn({ email: values.email, password: values.password }))
-            .then((res) => {})
+            .then((res) => {
+              resetForm();
+            })
             .catch((error) => {
               toast.show({
                 placement: "bottom",

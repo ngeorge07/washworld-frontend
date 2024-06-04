@@ -2,11 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import * as SecureStore from "expo-secure-store";
 import axios from "../../app/axios";
 import { AppDispatch } from "../../app/store";
-import { User } from "../../types/User";
 
 export interface AuthState {
   isSignedIn: boolean;
-  user: User | ReceivedUser | null;
+  user: ReceivedUser | null;
   status: "initial" | "loading" | "success" | "failure";
 }
 
@@ -72,6 +71,12 @@ export const authSlice = createSlice({
       state.status = "success";
     },
 
+    signoutSuccess: (state: AuthState) => {
+      state.user = null;
+      state.isSignedIn = false;
+      state.status = "success";
+    },
+
     failure: (state: AuthState) => {
       state.user = null;
       state.isSignedIn = false;
@@ -91,6 +96,9 @@ async function getToken() {
 async function saveToken(token: string) {
   await SecureStore.setItemAsync("token", token);
 }
+const deleteToken = async () => {
+  await SecureStore.deleteItemAsync("token");
+};
 
 export const signIn =
   (payload: SignInPayloadType) => async (dispatch: AppDispatch) => {
@@ -102,7 +110,14 @@ export const signIn =
 
       if (token) {
         await saveToken(token);
+
+        const headers = { Authorization: `Bearer ${token}` };
+        const res = await axios.get<ValidateResponse>("/auth/validate", {
+          headers,
+        });
+        const { user } = res.data;
         dispatch(authSlice.actions.signinSuccess());
+        dispatch(authSlice.actions.setUser(user));
       }
     } catch (error) {
       dispatch(authSlice.actions.failure());
@@ -155,6 +170,29 @@ export const autoSignIn = () => async (dispatch: AppDispatch) => {
     dispatch(authSlice.actions.failure());
   } finally {
     dispatch(authSlice.actions.initial());
+  }
+};
+
+export const signOut = () => async (dispatch: AppDispatch) => {
+  dispatch(authSlice.actions.request());
+  try {
+    await deleteToken();
+    axios.defaults.headers.common["Authorization"] = "";
+    dispatch(authSlice.actions.signoutSuccess());
+  } catch (error) {
+    console.log(error);
+    dispatch(authSlice.actions.failure());
+  } finally {
+    dispatch(authSlice.actions.initial());
+  }
+};
+
+export const fetchUser = (userSub: number) => async (dispatch: AppDispatch) => {
+  try {
+    const response = await axios.get<ReceivedUser>(`/users/${userSub}`);
+    dispatch(authSlice.actions.setUser(response.data));
+  } catch (error) {
+    console.error(error);
   }
 };
 

@@ -111,7 +111,7 @@ export const SignupScreen: FC = () => {
           )
             .then(() => {
               navigateToSignin(values);
-              // resetForm();
+              resetForm();
             })
             .catch((error) => {
               toast.show({
